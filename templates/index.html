@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BW5 TRA.Org | Multi-Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --neon-blue: #00d2ff;
+            --neon-deep: #3a7bd5;
+            --bg: #020617;
+            --card-bg: rgba(30, 41, 59, 0.75);
+            --shape-color: rgba(255, 255, 255, 0.07);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .area { 
+            position: absolute; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: -1; overflow: hidden; 
+            background: linear-gradient(to bottom, #020617, #0f172a);
+        }
+
+        .circles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 0; }
+        .circles li {
+            position: absolute; display: block; list-style: none; 
+            background: var(--shape-color); animation: animate 25s linear infinite; bottom: -150px;
+        }
+        .circles li:nth-child(1) { left: 25%; width: 80px; height: 80px; border-radius: 50%; animation-delay: 0s; }
+        .circles li:nth-child(2) { left: 10%; width: 30px; height: 30px; animation-delay: 2s; animation-duration: 12s; }
+        .circles li:nth-child(3) { left: 70%; width: 20px; height: 80px; animation-delay: 4s; }
+        .circles li:nth-child(4) { 
+            left: 40%; width: 0; height: 0; background: transparent;
+            border-left: 35px solid transparent; border-right: 35px solid transparent;
+            border-bottom: 60px solid var(--shape-color); animation-delay: 0s; 
+        }
+        .circles li:nth-child(5) { left: 65%; width: 45px; height: 45px; border-radius: 50%; animation-delay: 1s; }
+        .circles li:nth-child(6) { left: 85%; width: 50px; height: 50px; animation-delay: 3s; animation-duration: 18s; }
+        .circles li:nth-child(7) { left: 50%; width: 15px; height: 15px; border-radius: 50%; animation-delay: 7s; }
+
+        @keyframes animate {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-1200px) rotate(720deg); opacity: 0; }
+        }
+
+        .silver-text {
+            background: linear-gradient(to right, #ffffff, #a2c9ff, #0373fb) no-repeat;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; background-size: 100% 100%;
+        }
+
+        .top-left-header { position: absolute; top: 25px; left: 30px; z-index: 1001; }
+        .brand-text { font-size: 1.6rem; font-weight: 900; letter-spacing: 1.5px; display: inline-flex; align-items: baseline; }
+        .small-caps { font-variant: small-caps; text-transform: lowercase; font-size: 1.35rem; }
+
+        .mode-switcher {
+            display: flex; background: rgba(255,255,255,0.1); padding: 5px;
+            border-radius: 50px; margin-bottom: 25px; position: relative; width: fit-content; margin-inline: auto;
+        }
+        .mode-btn {
+            padding: 8px 20px; border-radius: 50px; cursor: pointer; font-size: 0.8rem;
+            font-weight: 600; transition: 0.3s; z-index: 2; color: #94a3b8;
+            width: 120px; text-align: center;
+        }
+        .mode-btn.active { color: white; }
+        .slider {
+            position: absolute; height: 32px; width: 120px; background: var(--primary);
+            border-radius: 50px; transition: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1;
+        }
+
+        .container {
+            background: var(--card-bg); backdrop-filter: blur(15px); padding: 2rem 2.5rem 1.5rem 2.5rem;
+            border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);
+            width: 100%; max-width: 450px; text-align: center; z-index: 10;
+            min-height: 460px; display: flex; flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-section { display: none; animation: slideIn 0.5s ease-out forwards; }
+        .form-section.active { display: block; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+
+        .header-with-icon { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.5rem; }
+        .header-with-icon h2 { margin: 0; font-size: 1.6rem; }
+
+        .file-input-group { margin-bottom: 1.2rem; text-align: left; }
+        label.input-label { display: block; margin-bottom: 8px; color: #cbd5e1; font-size: 0.75rem; text-transform: uppercase; }
+
+        .custom-file-upload {
+            display: flex; align-items: center; background: rgba(255,255,255,0.05);
+            border: 1.5px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 12px; cursor: pointer;
+            transition: 0.3s;
+        }
+        .custom-file-upload:hover { background: rgba(255,255,255,0.08); border-color: var(--primary); }
+        .custom-file-upload i { display: inline-block !important; margin-right: 12px; font-size: 1.2rem; }
+
+        .input-icon-wrapper { position: relative; display: flex; align-items: center; }
+        .input-icon-wrapper i { position: absolute; left: 12px; color: var(--neon-blue); font-size: 1rem; }
+        .input-icon-wrapper input { padding-left: 40px !important; }
+
+        .file-name { font-size: 0.85rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        input[type="file"] { display: none; }
+
+        input[type="text"], textarea {
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
+        }
+        
+        textarea { 
+            height: 110px; resize: none; font-size: 0.85rem; 
+            scrollbar-width: thin; 
+            scrollbar-color: var(--neon-blue) transparent;
+        }
+
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; margin: 5px; }
+        textarea::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--neon-blue), var(--neon-deep));
+            border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
+        }
+
+        .btn-main {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            color: white; font-weight: 700; cursor: pointer; transition: 0.4s; margin-top: 15px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .sync-theme-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .deploy-theme-btn { background: linear-gradient(135deg, var(--neon-blue), var(--neon-deep)); }
+
+        .signature { 
+            position: absolute; bottom: 20px; right: 30px; font-size: 0.85rem; 
+            font-weight: 500; color: #cbd5e1 !important; font-style: italic;
+            letter-spacing: 0.5px; opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="area">
+    <ul class="circles">
+        <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> </ul>
+</div>
+
+<div class="top-left-header">
+    <div class="brand-text silver-text">BW5 TRA.O<span class="small-caps">r</span><span class="small-caps">g</span></div>
+</div>
+
+<div class="container" id="main-card">
+    <div class="mode-switcher">
+        <div id="slider" class="slider"></div>
+        <div class="mode-btn active" onclick="switchMode('sync', this)">Sync Tool</div>
+        <div class="mode-btn" onclick="switchMode('deploy', this)">Deployment Tool</div>
+    </div>
+
+    <div id="sync-section" class="form-section active">
+        <div class="header-with-icon">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
+            <h2>TRA Prettifier</h2>
+        </div>
+        <form action="/pretify" method="POST" enctype="multipart/form-data">
+            <div class="file-input-group">
+                <label class="input-label">Correct TRA File</label>
+                <label class="custom-file-upload">
+                    <input type="file" name="correct_tra" accept=".tra" required onchange="updateFileName(this)">
+                    <i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> 
+                    <span class="file-name">Select correct TRA file...</span>
+                </label>
+            </div>
+            <div class="file-input-group" style="margin-bottom: 2.2rem;"> 
+                <label class="input-label">Wrong TRA File</label>
+                <label class="custom-file-upload">
+                    <input type="file" name="wrong_tra" accept=".tra" required onchange="updateFileName(this)">
+                    <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> 
+                    <span class="file-name">Select wrong TRA file...</span>
+                </label>
+            </div>
+            <button type="submit" class="btn-main sync-theme-btn">Align TRA Files</button>
+        </form>
+    </div>
+
+    <div id="deploy-section" class="form-section">
+        <div class="header-with-icon">
+            <i class="fa-solid fa-server" style="color: var(--neon-blue);"></i>
+            <h2>TRA Overwriter</h2>
+        </div>
+        <form id="deploy-form">
+            <div class="file-input-group">
+                <label class="input-label">TRA Directory Path</label>
+                <div class="input-icon-wrapper">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <input type="text" name="dir_path" placeholder="C:/Project/Data" required>
+                </div>
+            </div>
+            <div class="file-input-group">
+                <label class="input-label">TRA Configuration</label>
+                <textarea name="content" placeholder="key=value"></textarea>
+            </div>
+            <button type="submit" class="btn-main deploy-theme-btn">Replace in all TRA</button>
+        </form>
+    </div>
+</div>
+
+<div class="signature">Software Solution - By Md. Aman</div>
+
+<script>
+    function switchMode(mode, btn) {
+        const slider = document.getElementById('slider');
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        slider.style.left = btn.offsetLeft + 'px';
+        slider.style.width = btn.offsetWidth + 'px';
+        slider.style.background = (mode === 'deploy') ? 'var(--neon-blue)' : 'var(--primary)';
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(mode + '-section').classList.add('active');
+    }
+
+    function updateFileName(input) {
+        const file = input.files[0];
+        const label = input.parentElement.querySelector('.file-name');
+        
+        if (!file) {
+            label.textContent = "Select file...";
+            return;
+        }
+
+        const fileName = file.name;
+        if (!fileName.toLowerCase().endsWith(".tra")) {
+            alert("❌ Error: Sirf '.tra' files hi allow hain.");
+            input.value = ""; 
+            label.textContent = "Select file...";
+            return;
+        }
+
+        label.textContent = fileName;
+    }
+
+    // Fixed AJAX for Overwriter (Deployment Tool)
+    document.getElementById('deploy-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        const originalText = btn.textContent;
+
+        btn.textContent = "Updating Files...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/overwrite', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (result.status === "success") {
+                alert("✨ SUCCESS: " + result.message);
+            } else {
+                alert("❌ ERROR: " + result.message);
+            }
+        } catch (err) {
+            alert("❌ Network Error: " + err.message);
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    window.onload = () => {
+        const activeBtn = document.querySelector('.mode-btn.active');
+        const slider = document.getElementById('slider');
+        slider.style.left = activeBtn.offsetLeft + 'px';
+        slider.style.width = activeBtn.offsetWidth + 'px';
+    };
+</script>
+</body>
+</html>
