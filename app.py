@@ -21,6 +21,7 @@ def parse_tra(content):
     footer = lines[footer_idx:]
     main_content = lines[header_idx:footer_idx]
     
+    # Parse KV pairs
     kv_map = {}
     for line in main_content:
         if "=" in line and not line.strip().startswith("#"):
@@ -42,6 +43,7 @@ def pretify():
     w_header, w_footer, w_main, w_kv = parse_tra(wrong_file.read().decode('utf-8'))
     
     output_lines = w_header
+    
     for line in c_main:
         if "=" in line and not line.strip().startswith("#"):
             key = line.split("=", 1)[0].strip()
@@ -59,13 +61,18 @@ def pretify():
         output_lines.append("")
 
     output_lines.extend(w_footer)
+    
     output_name = f"{wrong_file.filename.split('.')[0]}_byPretify.tra"
-    return send_file(io.BytesIO("\n".join(output_lines).encode('utf-8')), as_attachment=True, download_name=output_name)
+    return send_file(
+        io.BytesIO("\n".join(output_lines).encode('utf-8')),
+        as_attachment=True,
+        download_name=output_name
+    )
 
 @app.route('/overwrite', methods=['POST'])
 def overwrite():
-    # SSH Credentials from UI
-    hostname = request.form.get('hostname')
+    # Extracting remote connection details from form
+    host = request.form.get('host')
     username = request.form.get('username')
     password = request.form.get('password')
     dir_path = request.form.get('dir_path')
@@ -79,47 +86,54 @@ def overwrite():
         "java.property.com.tibco.plugin.soap.trace.filename=C\\:/Soap.txt",
         "java.property.com.tibco.plugin.soap.trace.pretty=true"
     ]
-
+    
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    
     try:
-        # Connect to Remote Cloud Server
-        ssh.connect(hostname, username=username, password=password, timeout=10)
+        # Establish SSH Connection
+        ssh.connect(host, username=username, password=password, timeout=10)
         sftp = ssh.open_sftp()
         
-        files = sftp.listdir(dir_path)
-        count = 0
+        # Change to remote directory
+        try:
+            sftp.chdir(dir_path)
+        except IOError:
+            return jsonify({"status": "error", "message": f"Directory not found on server: {dir_path}"})
         
-        for filename in files:
+        count = 0
+        for filename in sftp.listdir():
             if filename.endswith(".tra"):
-                remote_path = f"{dir_path}/{filename}"
-                
-                # Remote file read karein
-                with sftp.open(remote_path, 'r') as f:
+                # Read remote file content
+                with sftp.open(filename, 'r') as f:
                     content = f.read().decode('utf-8')
                 
                 header, footer, main, kv = parse_tra(content)
                 existing_plugins = [p for p in plugin_lines if p in content]
                 
+                # Merge user content and keep existing plugins
                 final_main = [""] + user_content_list + [""]
                 if existing_plugins:
                     final_main.extend(existing_plugins)
                     final_main.append("") 
                 
-                final_file = header + final_main + footer
+                final_file_data = "\n".join(header + final_main + footer)
                 
-                # Remote server par wapas likhein
-                with sftp.open(remote_path, 'w') as f:
-                    f.write("\n".join(final_file))
+                # Write back to the remote server
+                with sftp.open(filename, 'w') as f:
+                    f.write(final_file_data)
                 count += 1
-                
+        
         sftp.close()
         ssh.close()
-        return jsonify({"status": "success", "message": f"Successfully updated {count} files on {hostname}."})
         
+        if count == 0:
+            return jsonify({"status": "error", "message": "No .tra files found in the specified directory."})
+            
+        return jsonify({"status": "success", "message": f"Successfully updated {count} files on {host}."})
+
     except Exception as e:
-        return jsonify({"status": "error", "message": f"SSH Error: {str(e)}"})
+        return jsonify({"status": "error", "message": f"Connection Error: {str(e)}"})
 
 if __name__ == '__main__':
     app.run(debug=True)

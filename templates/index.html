@@ -86,7 +86,7 @@
         .container {
             background: var(--card-bg); backdrop-filter: blur(15px); padding: 2rem 2.5rem 1.5rem 2.5rem;
             border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);
-            width: 100%; max-width: 450px; text-align: center; z-index: 10;
+            width: 100%; max-width: 480px; text-align: center; z-index: 10;
             min-height: 520px; display: flex; flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
@@ -95,11 +95,11 @@
         .form-section.active { display: block; }
         @keyframes slideIn { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
 
-        .header-with-icon { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.2rem; }
+        .header-with-icon { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 1.5rem; }
         .header-with-icon h2 { margin: 0; font-size: 1.6rem; }
 
-        .file-input-group { margin-bottom: 1rem; text-align: left; }
-        label.input-label { display: block; margin-bottom: 6px; color: #cbd5e1; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;}
+        .file-input-group { margin-bottom: 1.2rem; text-align: left; }
+        label.input-label { display: block; margin-bottom: 8px; color: #cbd5e1; font-size: 0.75rem; text-transform: uppercase; }
 
         .custom-file-upload {
             display: flex; align-items: center; background: rgba(255,255,255,0.05);
@@ -107,39 +107,56 @@
             transition: 0.3s;
         }
         .custom-file-upload:hover { background: rgba(255,255,255,0.08); border-color: var(--primary); }
-        
-        .input-icon-wrapper { position: relative; display: flex; align-items: center; margin-bottom: 8px; }
-        .input-icon-wrapper i { position: absolute; left: 12px; color: var(--neon-blue); font-size: 0.9rem; }
-        .input-icon-wrapper input { padding-left: 35px !important; }
+        .custom-file-upload i { display: inline-block !important; margin-right: 12px; font-size: 1.2rem; }
+
+        .input-icon-wrapper { position: relative; display: flex; align-items: center; }
+        .input-icon-wrapper i { position: absolute; left: 12px; color: var(--neon-blue); font-size: 1rem; }
+        .input-icon-wrapper input { padding-left: 40px !important; }
+
+        .file-name { font-size: 0.85rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        input[type="file"] { display: none; }
 
         input[type="text"], input[type="password"], textarea {
-            width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box; font-size: 0.85rem;
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+        
+        textarea { 
+            height: 90px; resize: none; font-size: 0.85rem; 
+            scrollbar-width: thin; scrollbar-color: var(--neon-blue) transparent;
         }
 
-        textarea { height: 90px; resize: none; }
-
         .btn-main {
-            width: 100%; padding: 14px; border: none; border-radius: 12px;
-            color: white; font-weight: 700; cursor: pointer; transition: 0.4s; margin-top: 10px;
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            color: white; font-weight: 700; cursor: pointer; transition: 0.4s; margin-top: 15px;
             text-transform: uppercase; letter-spacing: 1px;
         }
         .sync-theme-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
         .deploy-theme-btn { background: linear-gradient(135deg, var(--neon-blue), var(--neon-deep)); }
 
-        .signature { position: absolute; bottom: 20px; right: 30px; font-size: 0.8rem; color: #cbd5e1; font-style: italic; opacity: 0.8; }
+        .signature { 
+            position: absolute; bottom: 20px; right: 30px; font-size: 0.85rem; 
+            font-weight: 500; color: #cbd5e1 !important; font-style: italic; opacity: 0.8;
+        }
     </style>
 </head>
 <body>
 
-<div class="area"><ul class="circles"><li></li><li></li><li></li><li></li><li></li><li></li><li></li></ul></div>
-<div class="top-left-header"><div class="brand-text silver-text">BW5 TRA.O<span class="small-caps">r</span><span class="small-caps">g</span></div></div>
+<div class="area">
+    <ul class="circles">
+        <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> <li></li> </ul>
+</div>
+
+<div class="top-left-header">
+    <div class="brand-text silver-text">BW5 TRA.O<span class="small-caps">r</span><span class="small-caps">g</span></div>
+</div>
 
 <div class="container" id="main-card">
     <div class="mode-switcher">
         <div id="slider" class="slider"></div>
         <div class="mode-btn active" onclick="switchMode('sync', this)">Sync Tool</div>
-        <div class="mode-btn" onclick="switchMode('deploy', this)">Deployment Tool</div>
+        <div class="mode-btn" onclick="switchMode('deploy', this)">Remote Tool</div>
     </div>
 
     <div id="sync-section" class="form-section active">
@@ -152,14 +169,16 @@
                 <label class="input-label">Correct TRA File</label>
                 <label class="custom-file-upload">
                     <input type="file" name="correct_tra" accept=".tra" required onchange="updateFileName(this)">
-                    <span class="file-name">Select correct file...</span>
+                    <i class="fa-solid fa-circle-check" style="color: #4ade80;"></i> 
+                    <span class="file-name">Select correct TRA file...</span>
                 </label>
             </div>
-            <div class="file-input-group">
+            <div class="file-input-group" style="margin-bottom: 2.2rem;"> 
                 <label class="input-label">Wrong TRA File</label>
                 <label class="custom-file-upload">
                     <input type="file" name="wrong_tra" accept=".tra" required onchange="updateFileName(this)">
-                    <span class="file-name">Select wrong file...</span>
+                    <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> 
+                    <span class="file-name">Select wrong TRA file...</span>
                 </label>
             </div>
             <button type="submit" class="btn-main sync-theme-btn">Align TRA Files</button>
@@ -172,32 +191,32 @@
             <h2>Remote Overwriter</h2>
         </div>
         <form id="deploy-form">
-            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <div style="flex: 1.5;">
-                    <label class="input-label">Server IP</label>
-                    <input type="text" name="hostname" placeholder="15.206.x.x" required>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="file-input-group">
+                    <label class="input-label">Host IP</label>
+                    <input type="text" name="host" placeholder="10.x.x.x" required>
                 </div>
-                <div style="flex: 1;">
+                <div class="file-input-group">
                     <label class="input-label">Username</label>
-                    <input type="text" name="username" placeholder="ubuntu" required>
+                    <input type="text" name="username" placeholder="Admin" required>
                 </div>
             </div>
             <div class="file-input-group">
-                <label class="input-label">SSH Password</label>
+                <label class="input-label">Password</label>
                 <input type="password" name="password" placeholder="••••••••" required>
             </div>
             <div class="file-input-group">
-                <label class="input-label">Remote Path</label>
+                <label class="input-label">TRA Directory Path (Forward Slash /)</label>
                 <div class="input-icon-wrapper">
                     <i class="fa-solid fa-folder-open"></i>
-                    <input type="text" name="dir_path" placeholder="/home/tibco/tra_files" required>
+                    <input type="text" name="dir_path" placeholder="C:/tibco/tra/domain/..." required>
                 </div>
             </div>
             <div class="file-input-group">
-                <label class="input-label">New Configuration</label>
+                <label class="input-label">TRA Configuration</label>
                 <textarea name="content" placeholder="key=value"></textarea>
             </div>
-            <button type="submit" class="btn-main deploy-theme-btn">Replace in Cloud Server</button>
+            <button type="submit" class="btn-main deploy-theme-btn">Update Remote TRA</button>
         </form>
     </div>
 </div>
@@ -217,23 +236,30 @@
     }
 
     function updateFileName(input) {
-        const fileName = input.files[0] ? input.files[0].name : "Select file...";
-        input.parentElement.querySelector('.file-name').textContent = fileName;
+        const file = input.files[0];
+        const label = input.parentElement.querySelector('.file-name');
+        if (!file) return;
+        label.textContent = file.name;
     }
 
     document.getElementById('deploy-form').addEventListener('submit', async function(e) {
         e.preventDefault();
+        const formData = new FormData(this);
         const btn = this.querySelector('button');
         const originalText = btn.textContent;
-        btn.textContent = "Connecting SSH...";
+
+        btn.textContent = "Connecting & Updating...";
         btn.disabled = true;
 
         try {
-            const response = await fetch('/overwrite', { method: 'POST', body: new FormData(this) });
+            const response = await fetch('/overwrite', {
+                method: 'POST',
+                body: formData
+            });
             const result = await response.json();
             alert(result.status === "success" ? "✨ " + result.message : "❌ " + result.message);
         } catch (err) {
-            alert("❌ Network Error: " + err.message);
+            alert("❌ Network/Server Error");
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;

@@ -1,3 +1,11 @@
+# Web Framework for the application
 Flask==3.0.0
-gunicorn==21.2.0
+
+# Library for SSH and SFTP connections to the remote Windows Server
 paramiko==3.4.0
+
+# Optional but recommended for handling environment variables if needed
+python-dotenv==1.0.0
+
+# WSGI Server for production (optional, use 'python app.py' for local dev)
+gunicorn==21.2.0
