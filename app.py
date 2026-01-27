@@ -1,6 +1,5 @@
 import os
 import io
-import paramiko
 from flask import Flask, render_template, request, send_file, jsonify
 
 app = Flask(__name__)
@@ -71,14 +70,13 @@ def pretify():
 
 @app.route('/overwrite', methods=['POST'])
 def overwrite():
-    # Extracting remote connection details from form
-    host = request.form.get('host')
-    username = request.form.get('username')
-    password = request.form.get('password')
     dir_path = request.form.get('dir_path')
     raw_content = request.form.get('content', '')
     
     user_content_list = raw_content.splitlines()
+    
+    if not os.path.exists(dir_path):
+        return jsonify({"status": "error", "message": "Directory does not exist!"})
     
     plugin_lines = [
         "java.property.com.tibco.plugin.soap.trace.inbound=true",
@@ -87,53 +85,30 @@ def overwrite():
         "java.property.com.tibco.plugin.soap.trace.pretty=true"
     ]
     
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    
-    try:
-        # Establish SSH Connection
-        ssh.connect(host, username=username, password=password, timeout=10)
-        sftp = ssh.open_sftp()
-        
-        # Change to remote directory
-        try:
-            sftp.chdir(dir_path)
-        except IOError:
-            return jsonify({"status": "error", "message": f"Directory not found on server: {dir_path}"})
-        
-        count = 0
-        for filename in sftp.listdir():
-            if filename.endswith(".tra"):
-                # Read remote file content
-                with sftp.open(filename, 'r') as f:
-                    content = f.read().decode('utf-8')
-                
-                header, footer, main, kv = parse_tra(content)
-                existing_plugins = [p for p in plugin_lines if p in content]
-                
-                # Merge user content and keep existing plugins
-                final_main = [""] + user_content_list + [""]
-                if existing_plugins:
-                    final_main.extend(existing_plugins)
-                    final_main.append("") 
-                
-                final_file_data = "\n".join(header + final_main + footer)
-                
-                # Write back to the remote server
-                with sftp.open(filename, 'w') as f:
-                    f.write(final_file_data)
-                count += 1
-        
-        sftp.close()
-        ssh.close()
-        
-        if count == 0:
-            return jsonify({"status": "error", "message": "No .tra files found in the specified directory."})
+    count = 0
+    for filename in os.listdir(dir_path):
+        if filename.endswith(".tra"):
+            filepath = os.path.join(dir_path, filename)
+            with open(filepath, 'r') as f:
+                content = f.read()
             
-        return jsonify({"status": "success", "message": f"Successfully updated {count} files on {host}."})
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Connection Error: {str(e)}"})
+            header, footer, main, kv = parse_tra(content)
+            existing_plugins = [p for p in plugin_lines if p in content]
+            
+            # Exact Copy Logic:
+            final_main = [""] + user_content_list + [""]
+            
+            if existing_plugins:
+                final_main.extend(existing_plugins)
+                final_main.append("") 
+            
+            final_file = header + final_main + footer
+            
+            with open(filepath, 'w') as f:
+                f.write("\n".join(final_file))
+            count += 1
+            
+    return jsonify({"status": "success", "message": f"Successfully updated {count} files."})
 
 if __name__ == '__main__':
     app.run(debug=True)

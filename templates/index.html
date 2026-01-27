@@ -86,8 +86,8 @@
         .container {
             background: var(--card-bg); backdrop-filter: blur(15px); padding: 2rem 2.5rem 1.5rem 2.5rem;
             border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);
-            width: 100%; max-width: 480px; text-align: center; z-index: 10;
-            min-height: 520px; display: flex; flex-direction: column;
+            width: 100%; max-width: 450px; text-align: center; z-index: 10;
+            min-height: 460px; display: flex; flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
@@ -116,15 +116,22 @@
         .file-name { font-size: 0.85rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         input[type="file"] { display: none; }
 
-        input[type="text"], input[type="password"], textarea {
+        input[type="text"], textarea {
             width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
-            font-size: 0.9rem;
         }
         
         textarea { 
-            height: 90px; resize: none; font-size: 0.85rem; 
-            scrollbar-width: thin; scrollbar-color: var(--neon-blue) transparent;
+            height: 110px; resize: none; font-size: 0.85rem; 
+            scrollbar-width: thin; 
+            scrollbar-color: var(--neon-blue) transparent;
+        }
+
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; margin: 5px; }
+        textarea::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--neon-blue), var(--neon-deep));
+            border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
         }
 
         .btn-main {
@@ -137,7 +144,8 @@
 
         .signature { 
             position: absolute; bottom: 20px; right: 30px; font-size: 0.85rem; 
-            font-weight: 500; color: #cbd5e1 !important; font-style: italic; opacity: 0.8;
+            font-weight: 500; color: #cbd5e1 !important; font-style: italic;
+            letter-spacing: 0.5px; opacity: 0.8;
         }
     </style>
 </head>
@@ -156,7 +164,7 @@
     <div class="mode-switcher">
         <div id="slider" class="slider"></div>
         <div class="mode-btn active" onclick="switchMode('sync', this)">Sync Tool</div>
-        <div class="mode-btn" onclick="switchMode('deploy', this)">Remote Tool</div>
+        <div class="mode-btn" onclick="switchMode('deploy', this)">Deployment Tool</div>
     </div>
 
     <div id="sync-section" class="form-section active">
@@ -188,35 +196,21 @@
     <div id="deploy-section" class="form-section">
         <div class="header-with-icon">
             <i class="fa-solid fa-server" style="color: var(--neon-blue);"></i>
-            <h2>Remote Overwriter</h2>
+            <h2>TRA Overwriter</h2>
         </div>
         <form id="deploy-form">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                <div class="file-input-group">
-                    <label class="input-label">Host IP</label>
-                    <input type="text" name="host" placeholder="10.x.x.x" required>
-                </div>
-                <div class="file-input-group">
-                    <label class="input-label">Username</label>
-                    <input type="text" name="username" placeholder="Admin" required>
-                </div>
-            </div>
             <div class="file-input-group">
-                <label class="input-label">Password</label>
-                <input type="password" name="password" placeholder="••••••••" required>
-            </div>
-            <div class="file-input-group">
-                <label class="input-label">TRA Directory Path (Forward Slash /)</label>
+                <label class="input-label">TRA Directory Path</label>
                 <div class="input-icon-wrapper">
                     <i class="fa-solid fa-folder-open"></i>
-                    <input type="text" name="dir_path" placeholder="C:/tibco/tra/domain/..." required>
+                    <input type="text" name="dir_path" placeholder="C:/Project/Data" required>
                 </div>
             </div>
             <div class="file-input-group">
                 <label class="input-label">TRA Configuration</label>
                 <textarea name="content" placeholder="key=value"></textarea>
             </div>
-            <button type="submit" class="btn-main deploy-theme-btn">Update Remote TRA</button>
+            <button type="submit" class="btn-main deploy-theme-btn">Replace in all TRA</button>
         </form>
     </div>
 </div>
@@ -238,17 +232,31 @@
     function updateFileName(input) {
         const file = input.files[0];
         const label = input.parentElement.querySelector('.file-name');
-        if (!file) return;
-        label.textContent = file.name;
+        
+        if (!file) {
+            label.textContent = "Select file...";
+            return;
+        }
+
+        const fileName = file.name;
+        if (!fileName.toLowerCase().endsWith(".tra")) {
+            alert("❌ Error: Sirf '.tra' files hi allow hain.");
+            input.value = ""; 
+            label.textContent = "Select file...";
+            return;
+        }
+
+        label.textContent = fileName;
     }
 
+    // Fixed AJAX for Overwriter (Deployment Tool)
     document.getElementById('deploy-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         const btn = this.querySelector('button');
         const originalText = btn.textContent;
 
-        btn.textContent = "Connecting & Updating...";
+        btn.textContent = "Updating Files...";
         btn.disabled = true;
 
         try {
@@ -257,9 +265,14 @@
                 body: formData
             });
             const result = await response.json();
-            alert(result.status === "success" ? "✨ " + result.message : "❌ " + result.message);
+            
+            if (result.status === "success") {
+                alert("✨ SUCCESS: " + result.message);
+            } else {
+                alert("❌ ERROR: " + result.message);
+            }
         } catch (err) {
-            alert("❌ Network/Server Error");
+            alert("❌ Network Error: " + err.message);
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;
