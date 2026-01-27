@@ -1,5 +1,6 @@
 import os
 import io
+import paramiko
 from flask import Flask, render_template, request, send_file, jsonify
 
 app = Flask(__name__)
@@ -20,7 +21,6 @@ def parse_tra(content):
     footer = lines[footer_idx:]
     main_content = lines[header_idx:footer_idx]
     
-    # Parse KV pairs
     kv_map = {}
     for line in main_content:
         if "=" in line and not line.strip().startswith("#"):
@@ -42,7 +42,6 @@ def pretify():
     w_header, w_footer, w_main, w_kv = parse_tra(wrong_file.read().decode('utf-8'))
     
     output_lines = w_header
-    
     for line in c_main:
         if "=" in line and not line.strip().startswith("#"):
             key = line.split("=", 1)[0].strip()
@@ -60,23 +59,19 @@ def pretify():
         output_lines.append("")
 
     output_lines.extend(w_footer)
-    
     output_name = f"{wrong_file.filename.split('.')[0]}_byPretify.tra"
-    return send_file(
-        io.BytesIO("\n".join(output_lines).encode('utf-8')),
-        as_attachment=True,
-        download_name=output_name
-    )
+    return send_file(io.BytesIO("\n".join(output_lines).encode('utf-8')), as_attachment=True, download_name=output_name)
 
 @app.route('/overwrite', methods=['POST'])
 def overwrite():
+    # SSH Credentials from UI
+    hostname = request.form.get('hostname')
+    username = request.form.get('username')
+    password = request.form.get('password')
     dir_path = request.form.get('dir_path')
     raw_content = request.form.get('content', '')
     
     user_content_list = raw_content.splitlines()
-    
-    if not os.path.exists(dir_path):
-        return jsonify({"status": "error", "message": "Directory does not exist!"})
     
     plugin_lines = [
         "java.property.com.tibco.plugin.soap.trace.inbound=true",
@@ -84,31 +79,47 @@ def overwrite():
         "java.property.com.tibco.plugin.soap.trace.filename=C\\:/Soap.txt",
         "java.property.com.tibco.plugin.soap.trace.pretty=true"
     ]
-    
-    count = 0
-    for filename in os.listdir(dir_path):
-        if filename.endswith(".tra"):
-            filepath = os.path.join(dir_path, filename)
-            with open(filepath, 'r') as f:
-                content = f.read()
-            
-            header, footer, main, kv = parse_tra(content)
-            existing_plugins = [p for p in plugin_lines if p in content]
-            
-            # Exact Copy Logic:
-            final_main = [""] + user_content_list + [""]
-            
-            if existing_plugins:
-                final_main.extend(existing_plugins)
-                final_main.append("") 
-            
-            final_file = header + final_main + footer
-            
-            with open(filepath, 'w') as f:
-                f.write("\n".join(final_file))
-            count += 1
-            
-    return jsonify({"status": "success", "message": f"Successfully updated {count} files."})
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    try:
+        # Connect to Remote Cloud Server
+        ssh.connect(hostname, username=username, password=password, timeout=10)
+        sftp = ssh.open_sftp()
+        
+        files = sftp.listdir(dir_path)
+        count = 0
+        
+        for filename in files:
+            if filename.endswith(".tra"):
+                remote_path = f"{dir_path}/{filename}"
+                
+                # Remote file read karein
+                with sftp.open(remote_path, 'r') as f:
+                    content = f.read().decode('utf-8')
+                
+                header, footer, main, kv = parse_tra(content)
+                existing_plugins = [p for p in plugin_lines if p in content]
+                
+                final_main = [""] + user_content_list + [""]
+                if existing_plugins:
+                    final_main.extend(existing_plugins)
+                    final_main.append("") 
+                
+                final_file = header + final_main + footer
+                
+                # Remote server par wapas likhein
+                with sftp.open(remote_path, 'w') as f:
+                    f.write("\n".join(final_file))
+                count += 1
+                
+        sftp.close()
+        ssh.close()
+        return jsonify({"status": "success", "message": f"Successfully updated {count} files on {hostname}."})
+        
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"SSH Error: {str(e)}"})
 
 if __name__ == '__main__':
     app.run(debug=True)
